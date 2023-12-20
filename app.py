@@ -31,6 +31,26 @@ def generate_engagement_metrics_data():
     }
     return pd.DataFrame(data)
 
+def fill_missing_dates(data, date_col='Date'):
+    all_dates = pd.date_range(start=data[date_col].min(), end=data[date_col].max())
+    return pd.DataFrame(all_dates, columns=[date_col]).merge(data, on=date_col, how='left')
+
+def plot_metric_chart(data, metric, color, y_title):
+    chart = alt.Chart(data).mark_line().encode(
+        x='Date:T',
+        y=alt.Y(f'{metric}:Q', axis=alt.Axis(title=y_title)),
+        color=alt.value(color),
+        tooltip=['Date:T', f'{metric}:Q']
+    ).properties(width=800, height=300)
+
+    # Add average line
+    average_line = alt.Chart(data).mark_rule(color='gray').encode(
+        y=f'average({metric}):Q',
+        size=alt.value(2)
+    )
+    
+    return chart + average_line
+
 def main():
     st.title("User Engagement Metrics")
 
@@ -74,8 +94,11 @@ def main():
     # Generate example data
     engagement_metrics_data = generate_engagement_metrics_data()
 
+    # Fill missing dates for each metric
+    filled_data = fill_missing_dates(engagement_metrics_data)
+
     # Filter data based on selected date range
-    filtered_data = engagement_metrics_data[(engagement_metrics_data['Date'] >= date_range[0]) & (engagement_metrics_data['Date'] <= date_range[1])]
+    filtered_data = filled_data[(filled_data['Date'] >= date_range[0]) & (filled_data['Date'] <= date_range[1])]
 
     # Display the filtered data table
     st.write("## User Engagement Metrics Data (Filtered)")
@@ -93,3 +116,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
