@@ -5,29 +5,29 @@ import altair as alt
 import numpy as np
 
 @st.cache
-def generate_engagement_metrics_data():
+def generate_engagement_metrics_data(site_name):
     data = {
         'Date': pd.date_range(start='2023-01-01', periods=30),
-        'Session Duration (minutes)': np.random.randint(1, 60, size=30),
-        'Number of Sessions': np.random.randint(10, 100, size=30),
-        'Click-through Rate (%)': np.random.uniform(1, 10, size=30),
-        'Conversion Rate (%)': np.random.uniform(0, 5, size=30),
-        'Pageviews': np.random.randint(50, 200, size=30),
-        'Error Rates (%)': np.random.uniform(0, 2, size=30),
-        'Social Shares': np.random.randint(5, 50, size=30),
-        'Net Promoter Score (NPS)': np.random.randint(0, 10, size=30),
-        'Referral Sources': np.random.choice(['Google', 'Facebook', 'Twitter', 'LinkedIn'], size=30),
-        'Source-specific Engagement': np.random.uniform(0, 1, size=30),
-        'Content Consumption Metrics - Pageviews': np.random.randint(50, 200, size=30),
-        'Content Consumption Metrics - Content Interaction': np.random.uniform(0, 1, size=30),
-        'Error and Debugging Metrics - Error Rates': np.random.uniform(0, 2, size=30),
-        'Error and Debugging Metrics - Debugging Logs': np.random.randint(0, 5, size=30),
-        'Security Metrics - Security Events': np.random.randint(0, 2, size=30),
-        'Security Metrics - Access Control': np.random.randint(0, 1, size=30),
-        'Social Sharing Metrics - Social Shares': np.random.randint(5, 50, size=30),
-        'Social Sharing Metrics - Viral Reach': np.random.randint(0, 100, size=30),
-        'Monetization Metrics - Revenue per User': np.random.uniform(1, 100, size=30),
-        'Monetization Metrics - Conversion Funnel': np.random.uniform(0, 1, size=30),
+        f'Session Duration (minutes) - {site_name}': np.random.randint(1, 60, size=30),
+        f'Number of Sessions - {site_name}': np.random.randint(10, 100, size=30),
+        f'Click-through Rate (%) - {site_name}': np.random.uniform(1, 10, size=30),
+        f'Conversion Rate (%) - {site_name}': np.random.uniform(0, 5, size=30),
+        f'Pageviews - {site_name}': np.random.randint(50, 200, size=30),
+        f'Error Rates (%) - {site_name}': np.random.uniform(0, 2, size=30),
+        f'Social Shares - {site_name}': np.random.randint(5, 50, size=30),
+        f'Net Promoter Score (NPS) - {site_name}': np.random.randint(0, 10, size=30),
+        f'Referral Sources - {site_name}': np.random.choice(['Google', 'Facebook', 'Twitter', 'LinkedIn'], size=30),
+        f'Source-specific Engagement - {site_name}': np.random.uniform(0, 1, size=30),
+        f'Content Consumption Metrics - Pageviews - {site_name}': np.random.randint(50, 200, size=30),
+        f'Content Consumption Metrics - Content Interaction - {site_name}': np.random.uniform(0, 1, size=30),
+        f'Error and Debugging Metrics - Error Rates - {site_name}': np.random.uniform(0, 2, size=30),
+        f'Error and Debugging Metrics - Debugging Logs - {site_name}': np.random.randint(0, 5, size=30),
+        f'Security Metrics - Security Events - {site_name}': np.random.randint(0, 2, size=30),
+        f'Security Metrics - Access Control - {site_name}': np.random.randint(0, 1, size=30),
+        f'Social Sharing Metrics - Social Shares - {site_name}': np.random.randint(5, 50, size=30),
+        f'Social Sharing Metrics - Viral Reach - {site_name}': np.random.randint(0, 100, size=30),
+        f'Monetization Metrics - Revenue per User - {site_name}': np.random.uniform(1, 100, size=30),
+        f'Monetization Metrics - Conversion Funnel - {site_name}': np.random.uniform(0, 1, size=30),
     }
     return pd.DataFrame(data)
 
@@ -54,6 +54,13 @@ def plot_metric_chart(data, metric, color, y_title):
 def main():
     st.title("User Engagement Metrics")
 
+    # Sidebar for site selection
+    site_names = st.sidebar.text_input("Enter Site Names (comma-separated)", "Site 1,Site 2,Site 3")
+    site_names = [name.strip() for name in site_names.split(',')]
+
+    # Sidebar for frame selection
+    frame_names = st.sidebar.multiselect("Select Frames", ["Frame 1", "Frame 2", "Frame 3"], default=["Frame 1"])
+    
     # Sidebar for metric selection and date range
     selected_metrics = st.sidebar.multiselect("Select Metrics", [
         "Session Duration (minutes)",
@@ -91,24 +98,34 @@ def main():
     # Convert date range values to numpy.datetime64
     date_range = [np.datetime64(date) for date in date_range]
 
-    # Generate example data
-    engagement_metrics_data = generate_engagement_metrics_data()
+    # Generate example data for each site
+    frames_data = {}
+    for frame_name in frame_names:
+        frames_data[frame_name] = {}
+        for site_name in site_names:
+            frames_data[frame_name][site_name] = generate_engagement_metrics_data(site_name)
 
-    # Fill missing dates for each metric
-    filled_data = fill_missing_dates(engagement_metrics_data)
+    # Fill missing dates for each frame and site
+    for frame_name in frame_names:
+        for site_name in site_names:
+            frames_data[frame_name][site_name] = fill_missing_dates(frames_data[frame_name][site_name])
 
     # Filter data based on selected date range
-    filtered_data = filled_data[(filled_data['Date'] >= date_range[0]) & (filled_data['Date'] <= date_range[1])]
+    filtered_data = pd.concat([frames_data[frame_name][site_name] for frame_name in frame_names for site_name in site_names])
+    filtered_data = filtered_data[(filtered_data['Date'] >= date_range[0]) & (filtered_data['Date'] <= date_range[1])]
 
     # Display the filtered data table
     st.write("## User Engagement Metrics Data (Filtered)")
     st.write(filtered_data)
 
     # Create line charts using Altair with interactivity
-    for metric in selected_metrics:
-        st.write(f"## {metric} Chart")
-        y_title = metric.split(" - ")[-1] if " - " in metric else metric
-        st.altair_chart(plot_metric_chart(filtered_data, metric, 'blue', y_title))
+    for frame_name in frame_names:
+        st.write(f"## {frame_name}")
+        for metric in selected_metrics:
+            for site_name in site_names:
+                y_title = f"{metric} - {site_name}"
+                st.write(f"### {metric} Chart for {site_name}")
+                st.altair_chart(plot_metric_chart(frames_data[frame_name][site_name], f'{metric} - {site_name}', 'blue', y_title))
 
     # Summary Statistics
     st.write("## Summary Statistics")
@@ -116,4 +133,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
