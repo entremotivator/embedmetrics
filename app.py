@@ -18,22 +18,6 @@ def generate_engagement_metrics_data():
     }
     return pd.DataFrame(data)
 
-def plot_metric_chart(data, metric, color, y_title):
-    chart = alt.Chart(data).mark_line().encode(
-        x='Date:T',
-        y=alt.Y(f'{metric}:Q', axis=alt.Axis(title=y_title)),
-        color=alt.value(color),
-        tooltip=['Date:T', f'{metric}:Q']
-    ).properties(width=800, height=300)
-
-    # Add average line
-    average_line = alt.Chart(data).mark_rule(color='gray').encode(
-        y=f'average({metric}):Q',
-        size=alt.value(2)
-    )
-    
-    return chart + average_line
-
 def main():
     st.title("User Engagement Metrics")
 
@@ -41,6 +25,9 @@ def main():
     selected_metrics = st.sidebar.multiselect("Select Metrics", ["Session Duration", "Number of Sessions", "Click-through Rate", "Conversion Rate", "Pageviews", "Error Rates", "Social Shares"], default=["Session Duration", "Number of Sessions"])
     
     date_range = st.sidebar.date_input("Select Date Range:", [pd.to_datetime("2023-01-01"), pd.to_datetime("2023-01-30")], key="date_range")
+
+    # Convert date range values to numpy.datetime64
+    date_range = [np.datetime64(date) for date in date_range]
 
     # Generate example data
     engagement_metrics_data = generate_engagement_metrics_data()
